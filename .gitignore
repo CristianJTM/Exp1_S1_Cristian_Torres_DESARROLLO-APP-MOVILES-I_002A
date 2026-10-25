@@ -1,0 +1,45 @@
+# ============================================================
+# Agentes / asistentes de IA
+# ============================================================
+/AGENTS.md
+/prompts/
+/opencode.json
+/opencode.jsonc
+/.opencode/
+/CLAUDE.md
+/.claude/
+/.cursor/
+/.cursorrules
+/.aider*
+
+# ============================================================
+# IntelliJ IDEA y otros editores
+# ============================================================
+/.idea/
+*.iml
+*.ipr
+*.iws
+/out/
+/.vscode/
+/.fleet/
+
+# ============================================================
+# Artefactos de compilación y ejecución
+# ============================================================
+/build/
+/target/
+/.gradle/
+/.kotlin/
+*.class
+*.jar
+*.log
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# ============================================================
+# Sistema operativo
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
