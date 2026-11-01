@@ -1,13 +1,31 @@
-# Pizzería Kotlin — Actividad formativa
+# Pizzería Kotlin — Actividad formativa (v2)
 
-Aplicación de consola en Kotlin para simular el pedido de una pizzería. Todo el código está en `src/Main.kt`.
+Versión refactorizada de la Entrega Formativa 1. La entrega evaluada originalmente quedó conservada en la etiqueta `formativa-1`.
+
+Aplicación de consola en Kotlin organizada por paquetes y responsabilidades.
+
+## Estructura
+
+```text
+src/
+├── Main.kt
+├── modelo/
+│   ├── Cliente.kt
+│   ├── Pizza.kt
+│   └── Pedido.kt
+└── utils/
+    ├── Validaciones.kt
+    └── Calculos.kt
+```
 
 ## Funcionalidad
 
 - Registra nombre, dirección y teléfono del cliente.
-- Valida el teléfono: dígitos, `+` opcional al inicio y separadores simples con espacio o guion.
-- Calcula el subtotal, aplica un 10% de descuento desde 4 pizzas y muestra el total.
-- Verifica el stock, actualiza el inventario y genera un resumen del pedido.
+- Valida el teléfono y vuelve a preguntar si el formato es incorrecto.
+- Permite elegir entre varias pizzas.
+- Vuelve a solicitar la cantidad si el valor no es un entero mayor que cero.
+- Calcula subtotal, descuento del 10% desde 4 pizzas y total.
+- Verifica el stock, actualiza el inventario y genera un resumen completo.
 
 ## Requisitos
 
@@ -25,6 +43,9 @@ No requiere Gradle ni librerías externas.
 ## Ejecutar con kotlinc
 
 ```powershell
-kotlinc src/Main.kt -include-runtime -d pizzeria.jar
+$archivos = Get-ChildItem src -Recurse -Filter *.kt | ForEach-Object { $_.FullName }
+kotlinc $archivos -include-runtime -d pizzeria.jar
 java -jar pizzeria.jar
 ```
+
+Si `kotlinc` no está en el `PATH`, compila desde IntelliJ IDEA o usa el `kotlinc.bat` incluido en la instalación del IDE.

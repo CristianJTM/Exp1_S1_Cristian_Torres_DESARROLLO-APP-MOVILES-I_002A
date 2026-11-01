@@ -1,105 +1,97 @@
-// Actividad formativa: Mi primera app en Kotlin
+import modelo.Cliente
+import modelo.ESTADO_PREPARACION
+import modelo.ESTADO_SIN_STOCK
+import modelo.Pedido
+import modelo.Pizza
+import utils.calcularDescuento
+import utils.calcularPorcentajeDescuento
+import utils.calcularSubtotal
+import utils.calcularTotal
+import utils.formatearMonto
+import utils.leerCantidad
+import utils.leerOpcion
+import utils.leerTelefono
+import utils.leerTexto
 
 fun main() {
-    // 1. DECLARACIÓN DE VARIABLES
     println("=== PIZZERÍA ===")
 
-    val nombrePizza: String = "Pizza Pepperoni Familiar"
-    val precioUnitario: Double = 12990.0
+    val pizzas: List<Pizza> = listOf(
+        Pizza("Pepperoni Familiar", 12990.0, 20),
+        Pizza("Margarita Familiar", 10990.0, 15),
+        Pizza("Cuatro Quesos", 14990.0, 10)
+    )
 
-    var ingredientesDisponibles: Int = 20
-
-    val idPedido: Int = 1001
-    val estadoPreparacion: String = "Preparación"
-    val estadoSinStock: String = "Sin stock"
-
-    var cantidadPizzas: Int = 0
-    var totalPedido: Double = 0.0
-    var estadoPedido: String = "Pendiente"
-
-    var nombre: String = ""
-    var direccion: String = ""
-    var telefono: String = ""
-
-    println("Pizza: $nombrePizza")
-    println("Precio unitario: \$$precioUnitario")
-
-    // 2. CAPTURA DE DATOS DEL CLIENTE
-    println()
-    println("=== DATOS DEL CLIENTE ===")
-
-    print("Nombre: ")
-    val entradaNombre: String? = readLine()
-    nombre = if (entradaNombre.isNullOrBlank()) "Cliente sin nombre" else entradaNombre.trim()
-
-    print("Dirección: ")
-    val entradaDireccion: String? = readLine()
-    direccion = if (entradaDireccion.isNullOrBlank()) "Sin dirección" else entradaDireccion.trim()
-
-    print("Teléfono: ")
-    val telefonoIngresado: String = readLine()?.trim() ?: ""
-
-    // + opcional al inicio, dígitos, y grupos separados por un solo guion o espacio
-    val formatoTelefono: Regex = Regex("""^\+?\d+([ -]\d+)*$""")
-    val telefonoValido: Boolean = formatoTelefono.matches(telefonoIngresado)
-    telefono = if (telefonoValido) telefonoIngresado else "Sin teléfono"
-
-    if (!telefonoValido && telefonoIngresado.isNotEmpty()) {
-        println("Advertencia: teléfono inválido. Se usará \"Sin teléfono\".")
-    }
+    val cliente: Cliente = Cliente(
+        nombre = leerTexto("Nombre: ", "Cliente sin nombre"),
+        direccion = leerTexto("Dirección: ", "Sin dirección"),
+        telefono = leerTelefono()
+    )
 
     println()
     println("Datos registrados:")
-    println("Nombre: $nombre")
-    println("Dirección: $direccion")
-    println("Teléfono: $telefono")
+    println("Nombre: ${cliente.nombre}")
+    println("Dirección: ${cliente.direccion}")
+    println("Teléfono: ${cliente.telefono}")
 
-    // 3. CANTIDAD DE PIZZAS
-    println()
-    println("=== CANTIDAD DE PIZZAS ===")
-    print("Ingrese la cantidad de pizzas: ")
-    val cantidadLeida: Int = try {
-        readLine()?.trim()?.toInt() ?: 0
-    } catch (_: NumberFormatException) {
-        0
-    }
+    mostrarMenu(pizzas)
 
-    if (cantidadLeida <= 0) {
-        println("Advertencia: cantidad inválida. Se usará 1 pizza por defecto.")
-    }
-    cantidadPizzas = if (cantidadLeida > 0) cantidadLeida else 1
+    val opcion: Int = leerOpcion(pizzas.size)
+    val pizza: Pizza = pizzas[opcion - 1]
+    val cantidad: Int = leerCantidad()
 
-    // 4. CÁLCULO DEL TOTAL
-    val subtotal: Double = precioUnitario * cantidadPizzas
-    val porcentajeDescuento: Double = if (cantidadPizzas > 3) 0.10 else 0.0
-    val montoDescuento: Double = subtotal * porcentajeDescuento
-    totalPedido = subtotal - montoDescuento
+    val subtotal: Double = calcularSubtotal(pizza.precio, cantidad)
+    val porcentajeDescuento: Double = calcularPorcentajeDescuento(cantidad)
+    val descuento: Double = calcularDescuento(subtotal, porcentajeDescuento)
+    val total: Double = calcularTotal(subtotal, descuento)
 
-    // 5. VERIFICACIÓN DE STOCK
-    val stockInicial: Int = ingredientesDisponibles
-    val hayStock: Boolean = ingredientesDisponibles >= cantidadPizzas
+    val hayStock: Boolean = pizza.stock >= cantidad
+    val estado: String
+    val repartidor: String
 
     if (hayStock) {
-        ingredientesDisponibles -= cantidadPizzas
-        estadoPedido = estadoPreparacion
+        pizza.stock -= cantidad
+        estado = ESTADO_PREPARACION
+        repartidor = "Camila Rojas"
     } else {
-        estadoPedido = estadoSinStock
+        estado = ESTADO_SIN_STOCK
+        repartidor = "No asignado"
     }
 
-    val mensajeStock: String = if (hayStock) {
-        "Pedido confirmado. Stock restante: $ingredientesDisponibles"
-    } else {
-        "Sin stock. Disponible: $ingredientesDisponibles, solicitado: $cantidadPizzas"
+    val pedido: Pedido = Pedido(
+        id = 1001,
+        cliente = cliente,
+        pizza = pizza,
+        cantidad = cantidad,
+        subtotal = subtotal,
+        porcentajeDescuento = porcentajeDescuento,
+        descuento = descuento,
+        total = total,
+        estado = estado,
+        repartidor = repartidor
+    )
+
+    mostrarResumen(pedido)
+
+    if (pedido.estado == ESTADO_SIN_STOCK) {
+        println("El pedido no fue confirmado por falta de stock. No se cobrará ni se asignará repartidor.")
     }
+}
+
+fun mostrarMenu(pizzas: List<Pizza>) {
     println()
-    println(mensajeStock)
+    println("=== MENÚ DE PIZZAS ===")
+    for ((indice, pizza) in pizzas.withIndex()) {
+        println("${indice + 1}. ${pizza.nombre} - \$${formatearMonto(pizza.precio)} (stock: ${pizza.stock})")
+    }
+}
 
-    // 6. REPARTIDOR
-    val repartidor: String = "Camila Rojas"
-    val repartidorAsignado: String = if (estadoPedido == estadoPreparacion) repartidor else "No asignado"
-
-    // 7. RESUMEN FINAL
-    val etiquetaTotal: String = if (estadoPedido == estadoPreparacion) "Total a pagar" else "Total calculado (no cobrado)"
+fun mostrarResumen(pedido: Pedido) {
+    val etiquetaTotal: String = if (pedido.estado == ESTADO_PREPARACION) {
+        "Total a pagar"
+    } else {
+        "Total calculado (no cobrado)"
+    }
 
     println()
     println("============================================================")
@@ -107,28 +99,23 @@ fun main() {
     println("============================================================")
 
     println("--- Datos del cliente ---")
-    println("Nombre: $nombre")
-    println("Dirección: $direccion")
-    println("Teléfono: $telefono")
+    println("Nombre: ${pedido.cliente.nombre}")
+    println("Dirección: ${pedido.cliente.direccion}")
+    println("Teléfono: ${pedido.cliente.telefono}")
 
     println("--- Datos de la pizza ---")
-    println("Pizza: $nombrePizza")
-    println("Precio unitario: \$$precioUnitario")
-    println("Stock inicial: $stockInicial")
-    println("Stock restante: $ingredientesDisponibles")
+    println("Pizza: ${pedido.pizza.nombre}")
+    println("Precio unitario: \$${formatearMonto(pedido.pizza.precio)}")
+    println("Stock restante: ${pedido.pizza.stock}")
 
     println("--- Datos del pedido ---")
-    println("ID del pedido: $idPedido")
-    println("Cantidad de pizzas: $cantidadPizzas")
-    println("Subtotal: \$$subtotal")
-    println("Porcentaje de descuento: ${porcentajeDescuento * 100}%")
-    println("Monto del descuento: \$$montoDescuento")
-    println("$etiquetaTotal: \$$totalPedido")
-    println("Estado del pedido: $estadoPedido")
-    println("Repartidor: $repartidorAsignado")
+    println("ID del pedido: ${pedido.id}")
+    println("Cantidad de pizzas: ${pedido.cantidad}")
+    println("Subtotal: \$${formatearMonto(pedido.subtotal)}")
+    println("Porcentaje de descuento: ${(pedido.porcentajeDescuento * 100).toInt()}%")
+    println("Monto del descuento: \$${formatearMonto(pedido.descuento)}")
+    println("$etiquetaTotal: \$${formatearMonto(pedido.total)}")
+    println("Estado del pedido: ${pedido.estado}")
+    println("Repartidor: ${pedido.repartidor}")
     println("============================================================")
-
-    if (estadoPedido == estadoSinStock) {
-        println("El pedido no fue confirmado por falta de stock. No se cobrará ni se asignará repartidor.")
-    }
 }
