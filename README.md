@@ -1,8 +1,20 @@
-# Pizzería Kotlin — Actividad formativa (v2)
+# Pizzería Kotlin — Actividad Formativa 2
 
-Versión refactorizada de la Entrega Formativa 1. La entrega evaluada originalmente quedó conservada en la etiqueta `formativa-1`.
+Aplicación de consola en Kotlin para gestionar pedidos, clientes, inventario y repartidores. La entrega de la Semana 1 quedó conservada en la etiqueta `formativa-1`.
 
-Aplicación de consola en Kotlin organizada por paquetes y responsabilidades.
+## Funcionalidades
+
+- Registro de clientes con validación de teléfono y correo.
+- Valores por defecto para teléfono y correo inválidos.
+- Catálogo de pizzas con ingredientes y precios.
+- Pedidos con varios productos y cantidades.
+- Verificación de ingredientes antes de aceptar un pedido.
+- Inventario administrado con un `Map`.
+- Cálculo de subtotal, descuento del 10% desde 4 pizzas, IVA del 19% y total final.
+- Asignación del repartidor más cercano según zona y distancia.
+- Cambio de estado: En preparación, Listo y En camino.
+- Reporte diario con arreglo, ciclo `for` y agrupación con `filter`.
+- Resumen por pedido con plantillas de strings.
 
 ## Estructura
 
@@ -10,22 +22,40 @@ Aplicación de consola en Kotlin organizada por paquetes y responsabilidades.
 src/
 ├── Main.kt
 ├── modelo/
+│   ├── Usuario.kt
 │   ├── Cliente.kt
-│   ├── Pizza.kt
+│   ├── Repartidor.kt
+│   ├── Producto.kt
+│   ├── ItemPedido.kt
+│   ├── EstadoPedido.kt
 │   └── Pedido.kt
+├── servicio/
+│   ├── Inventario.kt
+│   └── Pizzeria.kt
 └── utils/
     ├── Validaciones.kt
-    └── Calculos.kt
+    ├── Calculos.kt
+    └── Formato.kt
 ```
 
-## Funcionalidad
+## Menú
 
-- Registra nombre, dirección y teléfono del cliente.
-- Valida el teléfono y vuelve a preguntar si el formato es incorrecto.
-- Permite elegir entre varias pizzas.
-- Vuelve a solicitar la cantidad si el valor no es un entero mayor que cero.
-- Calcula subtotal, descuento del 10% desde 4 pizzas y total.
-- Verifica el stock, actualiza el inventario y genera un resumen completo.
+1. Registrar pedido.
+2. Ver inventario.
+3. Reabastecer ingrediente.
+4. Asignar repartidor.
+5. Cambiar estado de pedido.
+6. Generar reporte del día.
+7. Salir.
+
+## Reglas de negocio
+
+- El descuento es del 10% cuando el pedido tiene más de 3 pizzas.
+- El IVA es del 19% y se aplica después del descuento.
+- Si faltan ingredientes, el pedido no se registra y se muestran los faltantes y los pasos para reabastecer.
+- Si el teléfono es inválido, se usa `(000) 000-0000`.
+- Si el correo es inválido, se muestra `correo@invalido.com` y no se envía notificación.
+- Si no se ingresan notas, se muestra `Sin notas`.
 
 ## Requisitos
 
@@ -49,3 +79,13 @@ java -jar pizzeria.jar
 ```
 
 Si `kotlinc` no está en el `PATH`, compila desde IntelliJ IDEA o usa el `kotlinc.bat` incluido en la instalación del IDE.
+
+## Entrega
+
+Comprimir en formato ZIP:
+
+```text
+src/
+README.md
+.gitignore
+```

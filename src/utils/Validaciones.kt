@@ -1,6 +1,7 @@
 package utils
 
 private val FORMATO_TELEFONO: Regex = Regex("""^\+?\d+([ -]\d+)*$""")
+private val FORMATO_CORREO: Regex = Regex("""^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$""")
 
 fun leerTexto(mensaje: String, valorPorDefecto: String): String {
     print(mensaje)
@@ -8,66 +9,83 @@ fun leerTexto(mensaje: String, valorPorDefecto: String): String {
     return if (entrada.isEmpty()) valorPorDefecto else entrada
 }
 
-fun validarTelefono(telefono: String): Boolean {
-    return FORMATO_TELEFONO.matches(telefono)
-}
-
 fun leerTelefono(): String {
-    while (true) {
-        print("Teléfono (opcional): ")
-        val entrada: String? = readlnOrNull()
+    print("Teléfono: ")
+    val telefono: String = readlnOrNull()?.trim().orEmpty()
 
-        if (entrada == null) {
-            return "Sin teléfono"
-        }
-
-        val telefono: String = entrada.trim()
-        if (telefono.isEmpty()) {
-            return "Sin teléfono"
-        }
-
-        if (validarTelefono(telefono)) {
-            return telefono
-        }
-
-        println("Teléfono inválido. Use dígitos, un + opcional al inicio y separadores simples con espacio o guion.")
+    if (FORMATO_TELEFONO.matches(telefono)) {
+        return telefono
     }
+
+    println("Teléfono inválido. Se usará (000) 000-0000.")
+    return "(000) 000-0000"
 }
 
-fun leerCantidad(): Int {
+fun leerCorreo(): String? {
+    print("Correo: ")
+    val correo: String = readlnOrNull()?.trim().orEmpty()
+
+    if (FORMATO_CORREO.matches(correo)) {
+        return correo
+    }
+
+    println("Correo inválido. Se mostrará correo@invalido.com.")
+    return null
+}
+
+fun leerNotas(): String? {
+    print("Notas del pedido (opcional): ")
+    return readlnOrNull()?.trim()?.takeIf { it.isNotEmpty() }
+}
+
+fun leerCantidad(mensaje: String): Int {
     while (true) {
-        print("Ingrese la cantidad de pizzas: ")
+        print(mensaje)
         val entrada: String? = readlnOrNull()
 
         if (entrada == null) {
-            println("\nNo se recibió una cantidad. Se usará 1 pizza por defecto.")
+            println("No se recibió una cantidad. Se usará 1 por defecto.")
             return 1
         }
 
-        val cantidad: Int? = entrada.trim().toIntOrNull()
-        if (cantidad != null && cantidad > 0) {
+        val cantidad: Int = try {
+            entrada.trim().toInt()
+        } catch (_: NumberFormatException) {
+            println("Error: ingrese un número entero.")
+            continue
+        }
+
+        if (cantidad > 0) {
             return cantidad
         }
 
-        println("Ingrese una cantidad válida mayor que cero.")
+        println("Error: la cantidad debe ser mayor que cero.")
     }
 }
 
-fun leerOpcion(cantidadOpciones: Int): Int {
+fun leerOpcion(minimo: Int, maximo: Int, mensaje: String): Int? {
     while (true) {
-        print("Seleccione una pizza (1-$cantidadOpciones): ")
-        val entrada: String? = readlnOrNull()
+        print(mensaje)
+        val entrada: String = readlnOrNull()?.trim() ?: return null
 
-        if (entrada == null) {
-            println("\nNo se recibió una opción. Se usará la primera pizza.")
-            return 1
-        }
-
-        val opcion: Int? = entrada.trim().toIntOrNull()
-        if (opcion != null && opcion in 1..cantidadOpciones) {
+        val opcion: Int? = entrada.toIntOrNull()
+        if (opcion != null && opcion in minimo..maximo) {
             return opcion
         }
 
-        println("Opción inválida. Ingrese un número entre 1 y $cantidadOpciones.")
+        println("Opción inválida. Ingrese un número entre $minimo y $maximo.")
+    }
+}
+
+fun leerSiNo(mensaje: String): Boolean {
+    while (true) {
+        print(mensaje)
+        val entrada: String = readlnOrNull()?.trim()?.lowercase() ?: return false
+
+        when (entrada) {
+            "s", "si", "sí" -> return true
+            "n", "no" -> return false
+            else -> println("Ingrese s o n.")
+        }
     }
 }
