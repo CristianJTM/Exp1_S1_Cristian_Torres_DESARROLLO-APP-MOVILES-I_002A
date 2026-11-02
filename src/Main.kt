@@ -1,121 +1,193 @@
 import modelo.Cliente
-import modelo.ESTADO_PREPARACION
-import modelo.ESTADO_SIN_STOCK
+import modelo.EstadoPedido
+import modelo.ItemPedido
 import modelo.Pedido
-import modelo.Pizza
-import utils.calcularDescuento
-import utils.calcularPorcentajeDescuento
-import utils.calcularSubtotal
-import utils.calcularTotal
-import utils.formatearMonto
+import modelo.Producto
+import modelo.Repartidor
+import servicio.Inventario
+import servicio.Pizzeria
 import utils.leerCantidad
+import utils.leerCorreo
+import utils.leerNotas
 import utils.leerOpcion
+import utils.leerSiNo
 import utils.leerTelefono
 import utils.leerTexto
 
 fun main() {
-    println("=== PIZZERÍA ===")
+    val pizzeria: Pizzeria = crearPizzeria()
 
-    val pizzas: List<Pizza> = listOf(
-        Pizza("Pepperoni Familiar", 12990.0, 20),
-        Pizza("Margarita Familiar", 10990.0, 15),
-        Pizza("Cuatro Quesos", 14990.0, 10)
-    )
+    while (true) {
+        mostrarMenuPrincipal()
+        val opcion: Int = leerOpcion(1, 7, "Seleccione una opción: ") ?: return
 
-    val cliente: Cliente = Cliente(
-        nombre = leerTexto("Nombre: ", "Cliente sin nombre"),
-        direccion = leerTexto("Dirección: ", "Sin dirección"),
-        telefono = leerTelefono()
-    )
-
-    println()
-    println("Datos registrados:")
-    println("Nombre: ${cliente.nombre}")
-    println("Dirección: ${cliente.direccion}")
-    println("Teléfono: ${cliente.telefono}")
-
-    mostrarMenu(pizzas)
-
-    val opcion: Int = leerOpcion(pizzas.size)
-    val pizza: Pizza = pizzas[opcion - 1]
-    val cantidad: Int = leerCantidad()
-
-    val subtotal: Double = calcularSubtotal(pizza.precio, cantidad)
-    val porcentajeDescuento: Double = calcularPorcentajeDescuento(cantidad)
-    val descuento: Double = calcularDescuento(subtotal, porcentajeDescuento)
-    val total: Double = calcularTotal(subtotal, descuento)
-
-    val hayStock: Boolean = pizza.stock >= cantidad
-    val estado: String
-    val repartidor: String
-
-    if (hayStock) {
-        pizza.stock -= cantidad
-        estado = ESTADO_PREPARACION
-        repartidor = "Camila Rojas"
-    } else {
-        estado = ESTADO_SIN_STOCK
-        repartidor = "No asignado"
-    }
-
-    val pedido: Pedido = Pedido(
-        id = 1001,
-        cliente = cliente,
-        pizza = pizza,
-        cantidad = cantidad,
-        subtotal = subtotal,
-        porcentajeDescuento = porcentajeDescuento,
-        descuento = descuento,
-        total = total,
-        estado = estado,
-        repartidor = repartidor
-    )
-
-    mostrarResumen(pedido)
-
-    if (pedido.estado == ESTADO_SIN_STOCK) {
-        println("El pedido no fue confirmado por falta de stock. No se cobrará ni se asignará repartidor.")
+        when (opcion) {
+            1 -> registrarPedido(pizzeria)
+            2 -> pizzeria.inventario.mostrar()
+            3 -> reabastecerInventario(pizzeria)
+            4 -> asignarRepartidor(pizzeria)
+            5 -> cambiarEstadoPedido(pizzeria)
+            6 -> pizzeria.generarReporte()
+            7 -> {
+                println("Gracias por usar el sistema. Hasta luego.")
+                return
+            }
+        }
     }
 }
 
-fun mostrarMenu(pizzas: List<Pizza>) {
+fun crearPizzeria(): Pizzeria {
+    val productos: List<Producto> = listOf(
+        Producto(
+            "Pepperoni Familiar",
+            12990.0,
+            mapOf("Masa" to 1, "Salsa" to 1, "Queso" to 2, "Pepperoni" to 1)
+        ),
+        Producto(
+            "Margarita Familiar",
+            10990.0,
+            mapOf("Masa" to 1, "Salsa" to 1, "Queso" to 2, "Tomate" to 1)
+        ),
+        Producto(
+            "Cuatro Quesos",
+            14990.0,
+            mapOf("Masa" to 1, "Salsa" to 1, "Queso" to 4)
+        )
+    )
+
+    val inventario: Inventario = Inventario(
+        mapOf(
+            "Masa" to 30,
+            "Salsa" to 30,
+            "Queso" to 80,
+            "Pepperoni" to 20,
+            "Tomate" to 20
+        )
+    )
+
+    val repartidores: List<Repartidor> = listOf(
+        Repartidor("Camila Rojas", "+56 9 1111 1111", "Centro", 1.2),
+        Repartidor("Diego Soto", "+56 9 2222 2222", "Centro", 2.5),
+        Repartidor("Valentina Díaz", "+56 9 3333 3333", "Norte", 3.0),
+        Repartidor("Martín Silva", "+56 9 4444 4444", "Sur", 2.0)
+    )
+
+    return Pizzeria(productos, inventario, repartidores)
+}
+
+fun mostrarMenuPrincipal() {
     println()
-    println("=== MENÚ DE PIZZAS ===")
-    for ((indice, pizza) in pizzas.withIndex()) {
-        println("${indice + 1}. ${pizza.nombre} - \$${formatearMonto(pizza.precio)} (stock: ${pizza.stock})")
+    println("============================================================")
+    println("                     PIZZERÍA")
+    println("============================================================")
+    println("1. Registrar pedido")
+    println("2. Ver inventario")
+    println("3. Reabastecer ingrediente")
+    println("4. Asignar repartidor")
+    println("5. Cambiar estado de pedido")
+    println("6. Generar reporte del día")
+    println("7. Salir")
+}
+
+fun registrarPedido(pizzeria: Pizzeria) {
+    println()
+    println("=== REGISTRO DE PEDIDO ===")
+
+    val nombre: String = leerTexto("Nombre del cliente: ", "Cliente sin nombre")
+    val telefono: String = leerTelefono()
+    val correo: String? = leerCorreo()
+
+    println("Zonas: 1. Centro, 2. Norte, 3. Sur")
+    val zonaOpcion: Int = leerOpcion(1, 3, "Seleccione zona: ") ?: return
+    val zona: String = when (zonaOpcion) {
+        1 -> "Centro"
+        2 -> "Norte"
+        else -> "Sur"
+    }
+
+    val notas: String? = leerNotas()
+    val cliente: Cliente = Cliente(nombre, telefono, correo, zona)
+    val items: MutableList<ItemPedido> = mutableListOf()
+
+    var agregarOtro: Boolean = true
+    while (agregarOtro) {
+        pizzeria.mostrarProductos()
+        val opcion: Int = leerOpcion(1, pizzeria.productos.size, "Seleccione una pizza: ") ?: return
+        val producto: Producto = pizzeria.productos[opcion - 1]
+        val cantidad: Int = leerCantidad("Cantidad de ${producto.nombre}: ")
+        items.add(ItemPedido(producto, cantidad))
+        agregarOtro = leerSiNo("¿Agregar otro producto? (s/n): ")
+    }
+
+    val pedido: Pedido? = pizzeria.registrarPedido(cliente, items, notas)
+
+    if (pedido != null) {
+        println()
+        println(pedido.generarResumen())
+        pedido.notificarCliente()
     }
 }
 
-fun mostrarResumen(pedido: Pedido) {
-    val etiquetaTotal: String = if (pedido.estado == ESTADO_PREPARACION) {
-        "Total a pagar"
-    } else {
-        "Total calculado (no cobrado)"
+fun reabastecerInventario(pizzeria: Pizzeria) {
+    println()
+    println("=== REABASTECER INVENTARIO ===")
+
+    val ingredientes: List<String> = pizzeria.inventario.ingredientesDisponibles().sorted()
+    if (ingredientes.isEmpty()) {
+        println("No hay ingredientes registrados.")
+        return
+    }
+
+    for ((indice, ingrediente) in ingredientes.withIndex()) {
+        println("${indice + 1}. $ingrediente")
+    }
+
+    val opcion: Int = leerOpcion(1, ingredientes.size, "Seleccione el ingrediente: ") ?: return
+    val ingrediente: String = ingredientes[opcion - 1]
+    val cantidad: Int = leerCantidad("Cantidad a reponer: ")
+    pizzeria.inventario.reponer(ingrediente, cantidad)
+}
+
+fun asignarRepartidor(pizzeria: Pizzeria) {
+    val pedido: Pedido = seleccionarPedido(pizzeria) ?: return
+    pizzeria.asignarRepartidor(pedido)
+    println()
+    println(pedido.generarResumen())
+}
+
+fun cambiarEstadoPedido(pizzeria: Pizzeria) {
+    val pedido: Pedido = seleccionarPedido(pizzeria) ?: return
+
+    println("1. En preparación")
+    println("2. Listo")
+    println("3. En camino")
+    val opcionEstado: Int = leerOpcion(1, 3, "Seleccione el nuevo estado: ") ?: return
+    val nuevoEstado: EstadoPedido = when (opcionEstado) {
+        1 -> EstadoPedido.EN_PREPARACION
+        2 -> EstadoPedido.LISTO
+        else -> EstadoPedido.EN_CAMINO
+    }
+
+    pedido.cambiarEstado(nuevoEstado)
+    println("Estado actualizado: ${pedido.estado.descripcion}")
+    println()
+    println(pedido.generarResumen())
+}
+
+fun seleccionarPedido(pizzeria: Pizzeria): Pedido? {
+    val pedidos: List<Pedido> = pizzeria.listarPedidos()
+
+    if (pedidos.isEmpty()) {
+        println("No hay pedidos registrados.")
+        return null
     }
 
     println()
-    println("============================================================")
-    println("                 RESUMEN DEL PEDIDO")
-    println("============================================================")
+    println("=== PEDIDOS REGISTRADOS ===")
+    for ((indice, pedido) in pedidos.withIndex()) {
+        println("${indice + 1}. Pedido #${pedido.id} - ${pedido.cliente.nombre} - ${pedido.estado.descripcion}")
+    }
 
-    println("--- Datos del cliente ---")
-    println("Nombre: ${pedido.cliente.nombre}")
-    println("Dirección: ${pedido.cliente.direccion}")
-    println("Teléfono: ${pedido.cliente.telefono}")
-
-    println("--- Datos de la pizza ---")
-    println("Pizza: ${pedido.pizza.nombre}")
-    println("Precio unitario: \$${formatearMonto(pedido.pizza.precio)}")
-    println("Stock restante: ${pedido.pizza.stock}")
-
-    println("--- Datos del pedido ---")
-    println("ID del pedido: ${pedido.id}")
-    println("Cantidad de pizzas: ${pedido.cantidad}")
-    println("Subtotal: \$${formatearMonto(pedido.subtotal)}")
-    println("Porcentaje de descuento: ${(pedido.porcentajeDescuento * 100).toInt()}%")
-    println("Monto del descuento: \$${formatearMonto(pedido.descuento)}")
-    println("$etiquetaTotal: \$${formatearMonto(pedido.total)}")
-    println("Estado del pedido: ${pedido.estado}")
-    println("Repartidor: ${pedido.repartidor}")
-    println("============================================================")
+    val opcion: Int = leerOpcion(1, pedidos.size, "Seleccione un pedido: ") ?: return null
+    return pizzeria.obtenerPedido(opcion - 1)
 }
