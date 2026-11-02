@@ -82,10 +82,6 @@ Si `kotlinc` no está en el `PATH`, compila desde IntelliJ IDEA o usa el `kotlin
 
 ## Entrega
 
-Comprimir en formato ZIP:
+El proyecto se entrega desde este repositorio de GitHub, en la rama `formativa-2`.
 
-```text
-src/
-README.md
-.gitignore
-```
+Si la plataforma solicita un archivo ZIP, se puede descargar directamente desde GitHub con **Code > Download ZIP**. No es necesario generar un ZIP local.
