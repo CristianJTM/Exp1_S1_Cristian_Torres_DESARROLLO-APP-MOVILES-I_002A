@@ -79,9 +79,3 @@ java -jar pizzeria.jar
 ```
 
 Si `kotlinc` no está en el `PATH`, compila desde IntelliJ IDEA o usa el `kotlinc.bat` incluido en la instalación del IDE.
-
-## Entrega
-
-El proyecto se entrega desde este repositorio de GitHub, en la rama `formativa-2`.
-
-Si la plataforma solicita un archivo ZIP, se puede descargar directamente desde GitHub con **Code > Download ZIP**. No es necesario generar un ZIP local.
