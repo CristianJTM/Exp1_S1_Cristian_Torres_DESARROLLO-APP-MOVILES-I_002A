@@ -98,9 +98,10 @@ class Pizzeria(
         println("============================================================")
 
         for (pedido in pedidosDelDia) {
+            val detallePizzas: String = pedido.items.joinToString { "${it.producto.nombre} x${it.cantidad}" }
             println(
                 "Pedido #${pedido.id} | Cliente: ${pedido.cliente.nombre} | " +
-                    "Pizzas: ${pedido.cantidadPizzas} | " +
+                    "Pizzas: $detallePizzas | " +
                     "Total: \$${formatearMonto(pedido.calcularTotal())} | " +
                     "Estado: ${pedido.estado.descripcion}"
             )
