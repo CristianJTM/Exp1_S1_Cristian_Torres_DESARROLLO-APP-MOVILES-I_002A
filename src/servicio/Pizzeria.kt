@@ -8,6 +8,7 @@ import modelo.Producto
 import modelo.Repartidor
 import utils.detallarProducto
 import utils.formatearMonto
+import java.time.LocalDate
 
 class Pizzeria(
     val productos: List<Producto>,
@@ -15,6 +16,7 @@ class Pizzeria(
     val repartidores: List<Repartidor>
 ) {
     private val pedidos: MutableList<Pedido> = mutableListOf()
+    private val clientes: MutableList<Cliente> = mutableListOf()
     private var siguienteId: Int = 1001
 
     fun mostrarProductos() {
@@ -23,6 +25,18 @@ class Pizzeria(
         for ((indice, producto) in productos.withIndex()) {
             println("${indice + 1}. ${producto.detallarProducto()}")
         }
+    }
+
+    fun registrarCliente(cliente: Cliente): Cliente {
+        val existente: Cliente? = clientes.find { it == cliente }
+
+        if (existente != null) {
+            println("El cliente ya está registrado: ${existente.nombre}.")
+            return existente
+        }
+
+        clientes.add(cliente)
+        return cliente
     }
 
     fun registrarPedido(cliente: Cliente, items: List<ItemPedido>, notas: String?): Pedido? {
@@ -63,11 +77,14 @@ class Pizzeria(
     }
 
     private fun crearYRegistrarPedido(cliente: Cliente, items: List<ItemPedido>, notas: String?): Pedido {
+        val fecha: LocalDate = LocalDate.now()
         val pedido: Pedido = Pedido(
             id = siguienteId,
             cliente = cliente,
             items = items.toMutableList(),
-            notas = notas
+            notas = notas,
+            fecha = fecha,
+            enPromocion = Promocion.estaActiva(fecha)
         )
         siguienteId += 1
         pedidos.add(pedido)

@@ -18,6 +18,10 @@ fun calcularDescuento(subtotal: Double, cantidadPizzas: Int): Double {
     return subtotal * calcularPorcentajeDescuento(cantidadPizzas)
 }
 
+fun calcularDescuentoPromocional(subtotal: Double, enPromocion: Boolean): Double {
+    return if (enPromocion) subtotal * TASA_DESCUENTO_PROMOCIONAL else 0.0
+}
+
 fun calcularImpuesto(base: Double, tasa: Double = TASA_IMPUESTO): Double {
     return base * tasa
 }

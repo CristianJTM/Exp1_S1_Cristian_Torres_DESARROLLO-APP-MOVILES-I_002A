@@ -1,12 +1,23 @@
+import modelo.Bebida
 import modelo.Cliente
+import modelo.ComboPromocionable
 import modelo.EstadoPedido
 import modelo.ItemPedido
 import modelo.Pedido
+import modelo.Pizza
+import modelo.PizzaPromocionable
 import modelo.Producto
 import modelo.Repartidor
 import modelo.Usuario
+import servicio.Catalogo
 import servicio.Inventario
 import servicio.Pizzeria
+import servicio.Promocion
+import servicio.Promociones
+import utils.RANGO_CANTIDAD_PERMITIDA
+import utils.Reflexion
+import utils.formatearMonto
+import utils.formatearTelefono
 import utils.leerCantidad
 import utils.leerCorreo
 import utils.leerNotas
@@ -14,13 +25,14 @@ import utils.leerOpcion
 import utils.leerSiNo
 import utils.leerTelefono
 import utils.leerTexto
+import java.time.LocalDate
 
 fun main() {
     val pizzeria: Pizzeria = crearPizzeria()
 
     while (true) {
         mostrarMenuPrincipal()
-        val opcion: Int = leerOpcion(1, 7, "Seleccione una opción: ") ?: return
+        val opcion: Int = leerOpcion(1, 8, "Seleccione una opción: ") ?: return
 
         when (opcion) {
             1 -> registrarPedido(pizzeria)
@@ -29,7 +41,8 @@ fun main() {
             4 -> asignarRepartidor(pizzeria)
             5 -> cambiarEstadoPedido(pizzeria)
             6 -> pizzeria.generarReporte()
-            7 -> {
+            7 -> mostrarResumenAvanzado(pizzeria)
+            8 -> {
                 println("Gracias por usar el sistema. Hasta luego.")
                 return
             }
@@ -38,31 +51,48 @@ fun main() {
 }
 
 fun crearPizzeria(): Pizzeria {
-    val productos: List<Producto> = listOf(
-        Producto(
+    val catalogo: Catalogo = Catalogo()
+
+    catalogo.agregar(
+        PizzaPromocionable(
             "Pepperoni Familiar",
             12990.0,
             mapOf("Masa" to 1, "Salsa" to 1, "Queso" to 2, "Pepperoni" to 1)
-        ),
-        Producto(
+        )
+    )
+    catalogo.agregar(
+        Pizza(
             "Margarita Familiar",
             10990.0,
             mapOf("Masa" to 1, "Salsa" to 1, "Queso" to 2, "Tomate" to 1)
-        ),
-        Producto(
-            "Cuatro Quesos",
-            14990.0,
-            mapOf("Masa" to 1, "Salsa" to 1, "Queso" to 4)
         )
     )
+    catalogo.agregar(
+        ComboPromocionable(
+            "Combo Familiar",
+            19990.0,
+            mapOf("Masa" to 2, "Salsa" to 2, "Queso" to 4, "Pepperoni" to 2)
+        )
+    )
+    catalogo.agregar(Bebida("Bebida Cola 1.5L", 2990.0))
+
+    val duplicado: Producto = Pizza(
+        "Pepperoni Familiar",
+        9990.0,
+        mapOf("Masa" to 1)
+    )
+
+    if (!catalogo.agregar(duplicado)) {
+        println("Producto duplicado evitado: ${duplicado.nombre}.")
+    }
 
     val inventario: Inventario = Inventario(
         mapOf(
-            "Masa" to 30,
-            "Salsa" to 30,
-            "Queso" to 80,
-            "Pepperoni" to 20,
-            "Tomate" to 20
+            "Masa" to 40,
+            "Salsa" to 40,
+            "Queso" to 100,
+            "Pepperoni" to 30,
+            "Tomate" to 30
         )
     )
 
@@ -73,7 +103,7 @@ fun crearPizzeria(): Pizzeria {
         Repartidor("Martín Silva", "+56 9 4444 4444", "Sur", 2.0)
     )
 
-    return Pizzeria(productos, inventario, repartidores)
+    return Pizzeria(catalogo.listar(), inventario, repartidores)
 }
 
 fun mostrarMenuPrincipal() {
@@ -87,7 +117,8 @@ fun mostrarMenuPrincipal() {
     println("4. Asignar repartidor")
     println("5. Cambiar estado de pedido")
     println("6. Generar reporte del día")
-    println("7. Salir")
+    println("7. Mostrar resumen avanzado")
+    println("8. Salir")
 }
 
 fun registrarPedido(pizzeria: Pizzeria) {
@@ -108,15 +139,16 @@ fun registrarPedido(pizzeria: Pizzeria) {
 
     val notas: String? = leerNotas()
     val cliente: Cliente = Cliente(nombre, telefono, correo, zona)
+    val clienteRegistrado: Cliente = pizzeria.registrarCliente(cliente)
     val items: MutableList<ItemPedido> = mutableListOf()
 
     var agregarOtro: Boolean = true
     while (agregarOtro) {
         pizzeria.mostrarProductos()
-        val opcion: Int = leerOpcion(1, pizzeria.productos.size, "Seleccione una pizza: ") ?: return
+        val opcion: Int = leerOpcion(1, pizzeria.productos.size, "Seleccione un producto: ") ?: return
         val producto: Producto? = pizzeria.productos.getOrNull(opcion - 1)
         if (producto == null) {
-            println("La pizza seleccionada ya no está disponible.")
+            println("El producto seleccionado ya no está disponible.")
             return
         }
 
@@ -125,7 +157,7 @@ fun registrarPedido(pizzeria: Pizzeria) {
         agregarOtro = leerSiNo("¿Agregar otro producto? (s/n): ")
     }
 
-    val pedido: Pedido? = pizzeria.registrarPedido(cliente, items, notas)
+    val pedido: Pedido? = pizzeria.registrarPedido(clienteRegistrado, items, notas)
 
     if (pedido != null) {
         println()
@@ -221,4 +253,93 @@ fun mostrarParticipantes(pedido: Pedido) {
     println()
     println("Participantes del pedido:")
     usuarios.forEach { println("  ${it.describir()}") }
+}
+
+fun mostrarResumenAvanzado(pizzeria: Pizzeria) {
+    println()
+    println("============================================================")
+    println("             RESUMEN DE FUNCIONALIDADES AVANZADAS")
+    println("============================================================")
+
+    println("--- Rango de promoción ---")
+    println("Desde ${Promocion.inicio} hasta ${Promocion.fin}.")
+    println("Promoción activa hoy: ${Promocion.estaActiva()}.")
+    println("Promoción activa dentro de un año: ${Promocion.estaActiva(LocalDate.now().plusYears(1))}.")
+    println("Rango permitido de cantidades: ${RANGO_CANTIDAD_PERMITIDA.first}-${RANGO_CANTIDAD_PERMITIDA.last}.")
+    println("Teléfono formateado de ejemplo: ${formatearTelefono("+56 9 1234 5678")}.")
+
+    println("--- Productos promocionables (@Promocionable) ---")
+    val promocionables: List<Producto> = Promociones.listarPromocionables(pizzeria.productos)
+    if (promocionables.isEmpty()) {
+        println("No hay productos promocionables.")
+    } else {
+        for (producto in promocionables) {
+            println("- ${producto.nombre}: ${Promociones.descripcion(producto)}")
+        }
+    }
+    println("Productos en catálogo sin duplicados: ${pizzeria.productos.size}.")
+
+    println("--- Reflection ---")
+    Reflexion.listarMiembros(Producto::class.java)
+    Reflexion.listarMiembros(Pedido::class.java)
+    Reflexion.listarMiembros(Cliente::class.java)
+
+    if (pizzeria.productos.size < 2) {
+        println("No hay suficientes productos para el resumen de pedidos.")
+        return
+    }
+
+    val clienteDemo: Cliente = Cliente(
+        "Cliente Demo",
+        formatearTelefono("+56 9 1234 5678") ?: "+56 9 1234 5678",
+        "cliente@demo.com",
+        "Centro"
+    )
+
+    println("--- Cliente desestructurado ---")
+    val (nombreCliente, correoCliente, telefonoCliente) = clienteDemo
+    println("Nombre: $nombreCliente")
+    println("Correo: $correoCliente")
+    println("Teléfono: $telefonoCliente")
+
+    val productosDemo: List<Producto> = pizzeria.productos.take(2)
+    val pedidoA: Pedido = Pedido(
+        id = 9001,
+        cliente = clienteDemo,
+        items = mutableListOf(ItemPedido(productosDemo[0], 2)),
+        notas = "Pedido de demostración A",
+        enPromocion = true
+    )
+    val pedidoB: Pedido = Pedido(
+        id = 9002,
+        cliente = clienteDemo,
+        items = mutableListOf(ItemPedido(productosDemo[1], 3)),
+        notas = "Pedido de demostración B",
+        enPromocion = true
+    )
+
+    println("--- Pedidos combinados con + ---")
+    val pedidoCombinado: Pedido = pedidoA + pedidoB
+    println(pedidoCombinado.generarResumen())
+
+    println("--- Pedido desestructurado ---")
+    val (clientePedido, productosPedido, totalPedido) = pedidoCombinado
+    println("Cliente: ${clientePedido.nombre}")
+    println("Productos: ${productosPedido.joinToString { it.nombre }}")
+    println("Total: \$${formatearMonto(totalPedido)}")
+
+    println("--- Igualdad de objetos ---")
+    val clienteA: Cliente = Cliente("Ana", "+56 (9) 1111-1111", "ana@example.com", "Centro")
+    val clienteB: Cliente = Cliente("Ana", "+56 (9) 2222-2222", "ana@example.com", "Norte")
+    println("Clientes iguales (nombre y correo): ${clienteA == clienteB}")
+    println("Clientes únicos en Set: ${setOf(clienteA, clienteB).size}")
+
+    val productoA: Producto = Pizza("Pepperoni Familiar", 12990.0, mapOf("Masa" to 1))
+    val productoB: Producto = Pizza(
+        "Pepperoni Familiar",
+        15990.0,
+        mapOf("Masa" to 1, "Queso" to 2)
+    )
+    println("Productos iguales (nombre y categoría): ${productoA == productoB}")
+    println("Productos únicos en Set: ${setOf(productoA, productoB).size}")
 }

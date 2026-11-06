@@ -10,27 +10,35 @@ fun leerTexto(mensaje: String, valorPorDefecto: String): String {
 }
 
 fun leerTelefono(): String {
-    print("Teléfono: ")
-    val telefono: String = readlnOrNull()?.trim().orEmpty()
+    while (true) {
+        print("Teléfono: ")
+        val entrada: String = readlnOrNull()?.trim() ?: return TELEFONO_POR_DEFECTO
 
-    if (FORMATO_TELEFONO.matches(telefono)) {
-        return telefono
+        if (!FORMATO_TELEFONO.matches(entrada)) {
+            println("Teléfono inválido. Use dígitos, un + opcional al inicio y separadores simples.")
+            continue
+        }
+
+        val formateado: String? = formatearTelefono(entrada)
+        if (formateado != null) {
+            return formateado
+        }
+
+        println("El teléfono debe tener 9, 11 o 12 dígitos.")
     }
-
-    println("Teléfono inválido. Se usará $TELEFONO_POR_DEFECTO.")
-    return TELEFONO_POR_DEFECTO
 }
 
 fun leerCorreo(): String? {
-    print("Correo: ")
-    val correo: String = readlnOrNull()?.trim().orEmpty()
+    while (true) {
+        print("Correo: ")
+        val correo: String = readlnOrNull()?.trim() ?: return null
 
-    if (FORMATO_CORREO.matches(correo)) {
-        return correo
+        if (FORMATO_CORREO.matches(correo)) {
+            return correo
+        }
+
+        println("Correo inválido. Ingrese un correo con formato nombre@dominio.com.")
     }
-
-    println("Correo inválido. Se mostrará $CORREO_POR_DEFECTO.")
-    return null
 }
 
 fun leerNotas(): String? {
@@ -55,11 +63,14 @@ fun leerCantidad(mensaje: String): Int {
             continue
         }
 
-        if (cantidad > 0) {
+        if (cantidad in RANGO_CANTIDAD_PERMITIDA) {
             return cantidad
         }
 
-        println("Error: la cantidad debe ser mayor que cero.")
+        println(
+            "Error: la cantidad debe estar entre " +
+                "${RANGO_CANTIDAD_PERMITIDA.first} y ${RANGO_CANTIDAD_PERMITIDA.last}."
+        )
     }
 }
 
