@@ -1,20 +1,26 @@
-# Pizzería Kotlin — Actividad Formativa 2
+# Pizzería Kotlin — Actividad Sumativa 3
 
-Aplicación de consola en Kotlin para gestionar pedidos, clientes, inventario y repartidores. La entrega de la Semana 1 quedó conservada en la etiqueta `formativa-1`.
+Aplicación de consola en Kotlin para gestionar pedidos, clientes, inventario y repartidores. Integra POO, expresiones regulares, rangos, anotaciones, reflection, sobrecarga de operadores, desestructuración e igualdad de objetos.
 
 ## Funcionalidades
 
-- Registro de clientes con validación de teléfono y correo.
-- Valores por defecto para teléfono y correo inválidos.
-- Catálogo de pizzas con ingredientes y precios.
-- Pedidos con varios productos y cantidades.
+- Registro de clientes con validación de correo mediante `Regex` y reingreso si el formato es incorrecto.
+- Normalización y formato de teléfonos al estilo `+56 (9) 1234-5678` o `+XX (XXX) XXX-XXXX`.
+- Catálogo de pizzas, combos y bebidas.
+- Productos promocionables identificados con `@Promocionable`.
 - Verificación de ingredientes antes de aceptar un pedido.
 - Inventario administrado con un `Map`.
-- Cálculo de subtotal, descuento del 10% desde 4 pizzas, IVA del 19% y total final.
+- Cantidades permitidas dentro del rango `1..100`.
+- Descuento del 10% desde 4 pizzas.
+- Descuento promocional del 5% dentro del periodo de promociones.
+- IVA del 19% aplicado después de los descuentos.
 - Asignación del repartidor más cercano según zona y distancia.
-- Cambio de estado: En preparación, Listo y En camino.
+- Estados: En preparación, Listo y En camino.
 - Reporte diario con arreglo, ciclo `for` y agrupación con `filter`.
-- Resumen por pedido con plantillas de strings.
+- Combinación de pedidos mediante el operador `+`.
+- Desestructuración de clientes y pedidos.
+- Igualdad de clientes y productos con `equals`/`hashCode`.
+- Resumen avanzado que integra anotaciones, reflection, operadores, desestructuración y validaciones.
 
 ## Estructura
 
@@ -25,18 +31,27 @@ src/
 │   ├── Usuario.kt
 │   ├── Cliente.kt
 │   ├── Repartidor.kt
+│   ├── CategoriaProducto.kt
 │   ├── Producto.kt
+│   ├── Pizza.kt
+│   ├── Combo.kt
+│   ├── Bebida.kt
+│   ├── Promocionable.kt
 │   ├── ItemPedido.kt
 │   ├── EstadoPedido.kt
 │   └── Pedido.kt
 ├── servicio/
+│   ├── Catalogo.kt
 │   ├── Inventario.kt
-│   └── Pizzeria.kt
+│   ├── Pizzeria.kt
+│   ├── Promocion.kt
+│   └── Promociones.kt
 └── utils/
     ├── Constantes.kt
     ├── Validaciones.kt
     ├── Calculos.kt
-    └── Formato.kt
+    ├── Formato.kt
+    └── Reflexion.kt
 ```
 
 ## Menú
@@ -47,51 +62,76 @@ src/
 4. Asignar repartidor.
 5. Cambiar estado de pedido.
 6. Generar reporte del día.
-7. Salir.
+7. Mostrar resumen avanzado.
+8. Salir.
 
 ## Reglas de negocio
 
-- El descuento es del 10% cuando el pedido tiene más de 3 pizzas.
-- El IVA es del 19% y se aplica después del descuento.
+- El correo debe tener formato `nombre@dominio.com`; si es inválido, se solicita nuevamente.
+- El teléfono se normaliza a un formato uniforme; si no tiene 9, 11 o 12 dígitos, se solicita nuevamente.
+- La cantidad de productos debe estar entre 1 y 100.
+- El descuento por cantidad es del 10% cuando el pedido tiene más de 3 pizzas.
+- La promoción está activa desde 7 días antes hasta 7 días después de la fecha actual.
+- Si la promoción está activa, se aplica un descuento adicional del 5%.
+- El IVA es del 19% y se aplica después de los descuentos.
 - Si faltan ingredientes, el pedido no se registra y se muestran los faltantes y los pasos para reabastecer.
-- Si el teléfono es inválido, se usa `(000) 000-0000`.
-- Si el correo es inválido, se muestra `correo@invalido.com` y no se envía notificación.
 - Si no se ingresan notas, se muestra `Sin notas`.
 - La secuencia de estados es `En preparación → Listo → En camino`; no se permiten retrocesos.
 - Un pedido solo puede pasar a `En camino` cuando se le asigna un repartidor.
 - El repartidor se elige por zona y disponibilidad, priorizando la menor distancia.
+- Dos clientes son iguales si coinciden en nombre y correo.
+- Dos productos son iguales si coinciden en nombre y categoría.
+
+## Conceptos avanzados
+
+| Concepto | Implementación |
+|---|---|
+| `Regex` | Validación de correo y teléfono en `Validaciones.kt`. |
+| `Ranges` | Cantidades `1..100` y rango de fechas de promoción. |
+| Anotaciones | `@Promocionable` en pizzas y combos. |
+| Reflection | Listado de métodos y campos de `Producto`, `Pedido` y `Cliente`. |
+| Operador `+` | `Pedido.plus()` combina ítems y recalcula totales. |
+| Operador `==` | `Producto.equals()` por nombre y categoría. |
+| Desestructuración | `component1..3` en `Cliente` y `Pedido`. |
+| `equals`/`hashCode` | Implementados en `Cliente` y `Producto`. |
+| Prevención de duplicados | `Pizzeria.registrarCliente()` y `Catalogo.agregar()`. |
+| Resumen integrador | Opción 7 del menú. |
 
 ## Responsabilidades
 
 | Capa | Responsabilidad |
 |---|---|
-| `modelo` | Entidades y reglas propias del pedido, usuario y producto. |
-| `servicio` | Inventario, registro de pedidos, repartidores y reportes. |
-| `utils` | Constantes, validaciones, cálculos y formato de presentación. |
-| `Main` | Interacción por consola y coordinación del flujo. |
+| `modelo` | Entidades, reglas del pedido, igualdad, desestructuración y operadores. |
+| `servicio` | Catálogo, inventario, promociones, repartidores y reportes. |
+| `utils` | Constantes, validaciones, cálculos, formato y reflection. |
+| `Main` | Interacción por consola y demostración de funcionalidades. |
 
 ## Escenarios de prueba
 
 | Escenario | Condición | Resultado esperado |
 |---|---|---|
-| Stock suficiente | Pedido dentro del inventario | Pedido registrado y stock descontado. |
-| Stock insuficiente | Pedido mayor al stock | Rechazo, lista de faltantes y pasos de reposición. |
-| Teléfono inválido | Texto no válido | Se usa `(000) 000-0000`. |
-| Correo inválido | Formato incorrecto | Se muestra `correo@invalido.com` y no se notifica. |
-| Notas vacías | Sin comentarios | Se muestra `Sin notas`. |
-| Cantidad inválida | `abc`, `0` o negativa | Se vuelve a solicitar la cantidad. |
-| Opción fuera de rango | Número fuera del menú | Se vuelve a solicitar la opción. |
-| Transición válida | `En preparación → Listo → En camino` | Se aplica solo con repartidor asignado. |
+| Correo inválido | Sin formato `nombre@dominio.com` | Se solicita nuevamente. |
+| Teléfono local | 9 dígitos | Se normaliza a `+56 (9) 1234-5678`. |
+| Teléfono chileno | 11 dígitos | Se formatea como `+56 (9) 1234-5678`. |
+| Teléfono internacional | 12 dígitos | Se formatea como `+XX (XXX) XXX-XXXX`. |
+| Cantidad inválida | `0`, `101` o texto | Se solicita nuevamente. |
+| Promoción activa | Fecha dentro del rango | Se aplica 5% adicional. |
+| Promoción inactiva | Fecha fuera del rango | No se aplica descuento promocional. |
+| Producto promocionable | Clase anotada con `@Promocionable` | Aparece en el resumen avanzado y en el pedido. |
+| Reflection | Clases del dominio | Lista métodos y propiedades/campos. |
+| Operador `+` | Dos pedidos del mismo cliente | Se combinan ítems y se recalcula el total. |
+| Igualdad de productos | Mismo nombre y categoría | `==` es verdadero y no se duplica en `Set`. |
+| Igualdad de clientes | Mismo nombre y correo | `==` es verdadero y no se registra dos veces. |
+| Desestructuración | Cliente y pedido | Se obtienen nombre/correo/teléfono y cliente/productos/total. |
+| Stock insuficiente | Pedido mayor al inventario | Se rechaza y no se descuenta stock. |
 | Transición inválida | Retroceso desde `En camino` | Se rechaza y se conserva el estado. |
-| Repartidor no disponible | Sin repartidor en la zona | El pedido queda en `Listo` sin asignación. |
-| Polimorfismo | Cliente y repartidor en `List<Usuario>` | `describir()` muestra el comportamiento específico. |
 
 ## Requisitos
 
 - JDK 21 o superior.
 - IntelliJ IDEA con el plugin de Kotlin, o `kotlinc` instalado.
 
-No requiere Gradle ni librerías externas.
+No requiere Gradle ni librerías externas. La reflection utiliza las clases del JDK.
 
 ## Ejecutar en IntelliJ IDEA
 
