@@ -4,6 +4,7 @@ import modelo.ItemPedido
 import modelo.Pedido
 import modelo.Producto
 import modelo.Repartidor
+import modelo.Usuario
 import servicio.Inventario
 import servicio.Pizzeria
 import utils.leerCantidad
@@ -113,7 +114,12 @@ fun registrarPedido(pizzeria: Pizzeria) {
     while (agregarOtro) {
         pizzeria.mostrarProductos()
         val opcion: Int = leerOpcion(1, pizzeria.productos.size, "Seleccione una pizza: ") ?: return
-        val producto: Producto = pizzeria.productos[opcion - 1]
+        val producto: Producto? = pizzeria.productos.getOrNull(opcion - 1)
+        if (producto == null) {
+            println("La pizza seleccionada ya no está disponible.")
+            return
+        }
+
         val cantidad: Int = leerCantidad("Cantidad de ${producto.nombre}: ")
         items.add(ItemPedido(producto, cantidad))
         agregarOtro = leerSiNo("¿Agregar otro producto? (s/n): ")
@@ -125,6 +131,7 @@ fun registrarPedido(pizzeria: Pizzeria) {
         println()
         println(pedido.generarResumen())
         pedido.notificarCliente()
+        mostrarParticipantes(pedido)
     }
 }
 
@@ -143,7 +150,12 @@ fun reabastecerInventario(pizzeria: Pizzeria) {
     }
 
     val opcion: Int = leerOpcion(1, ingredientes.size, "Seleccione el ingrediente: ") ?: return
-    val ingrediente: String = ingredientes[opcion - 1]
+    val ingrediente: String? = ingredientes.getOrNull(opcion - 1)
+    if (ingrediente == null) {
+        println("El ingrediente seleccionado ya no está disponible.")
+        return
+    }
+
     val cantidad: Int = leerCantidad("Cantidad a reponer: ")
     pizzeria.inventario.reponer(ingrediente, cantidad)
 }
@@ -153,23 +165,31 @@ fun asignarRepartidor(pizzeria: Pizzeria) {
     pizzeria.asignarRepartidor(pedido)
     println()
     println(pedido.generarResumen())
+    mostrarParticipantes(pedido)
 }
 
 fun cambiarEstadoPedido(pizzeria: Pizzeria) {
     val pedido: Pedido = seleccionarPedido(pizzeria) ?: return
 
+    println("Estado actual: ${pedido.estado.descripcion}")
     println("1. En preparación")
     println("2. Listo")
-    println("3. En camino")
-    val opcionEstado: Int = leerOpcion(1, 3, "Seleccione el nuevo estado: ") ?: return
+    println("Para pasar a En camino, asigne un repartidor desde la opción 4.")
+
+    val opcionEstado: Int = leerOpcion(1, 2, "Seleccione el nuevo estado: ") ?: return
     val nuevoEstado: EstadoPedido = when (opcionEstado) {
         1 -> EstadoPedido.EN_PREPARACION
-        2 -> EstadoPedido.LISTO
-        else -> EstadoPedido.EN_CAMINO
+        else -> EstadoPedido.LISTO
     }
 
-    pedido.cambiarEstado(nuevoEstado)
-    println("Estado actualizado: ${pedido.estado.descripcion}")
+    val aplicado: Boolean = pedido.cambiarEstado(nuevoEstado)
+    if (aplicado) {
+        println("Estado actualizado: ${pedido.estado.descripcion}")
+    } else {
+        println("Transición no permitida: ${pedido.estado.descripcion} -> ${nuevoEstado.descripcion}.")
+        println("Secuencia permitida: En preparación -> Listo -> En camino.")
+    }
+
     println()
     println(pedido.generarResumen())
 }
@@ -189,5 +209,16 @@ fun seleccionarPedido(pizzeria: Pizzeria): Pedido? {
     }
 
     val opcion: Int = leerOpcion(1, pedidos.size, "Seleccione un pedido: ") ?: return null
-    return pizzeria.obtenerPedido(opcion - 1)
+    val pedido: Pedido? = pizzeria.obtenerPedido(opcion - 1)
+    if (pedido == null) {
+        println("El pedido seleccionado ya no existe.")
+    }
+    return pedido
+}
+
+fun mostrarParticipantes(pedido: Pedido) {
+    val usuarios: List<Usuario> = listOfNotNull<Usuario>(pedido.cliente, pedido.repartidor)
+    println()
+    println("Participantes del pedido:")
+    usuarios.forEach { println("  ${it.describir()}") }
 }

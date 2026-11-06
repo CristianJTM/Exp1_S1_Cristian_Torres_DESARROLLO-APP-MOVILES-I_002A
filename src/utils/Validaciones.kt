@@ -1,7 +1,7 @@
 package utils
 
-private val FORMATO_TELEFONO: Regex = Regex("""^\+?\d+([ -]\d+)*$""")
-private val FORMATO_CORREO: Regex = Regex("""^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$""")
+private val FORMATO_TELEFONO: Regex = Regex(PATRON_TELEFONO)
+private val FORMATO_CORREO: Regex = Regex(PATRON_CORREO)
 
 fun leerTexto(mensaje: String, valorPorDefecto: String): String {
     print(mensaje)
@@ -17,8 +17,8 @@ fun leerTelefono(): String {
         return telefono
     }
 
-    println("Teléfono inválido. Se usará (000) 000-0000.")
-    return "(000) 000-0000"
+    println("Teléfono inválido. Se usará $TELEFONO_POR_DEFECTO.")
+    return TELEFONO_POR_DEFECTO
 }
 
 fun leerCorreo(): String? {
@@ -29,7 +29,7 @@ fun leerCorreo(): String? {
         return correo
     }
 
-    println("Correo inválido. Se mostrará correo@invalido.com.")
+    println("Correo inválido. Se mostrará $CORREO_POR_DEFECTO.")
     return null
 }
 

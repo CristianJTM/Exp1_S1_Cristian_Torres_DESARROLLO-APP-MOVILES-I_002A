@@ -2,14 +2,20 @@ package utils
 
 import modelo.ItemPedido
 
-const val TASA_IMPUESTO: Double = 0.19
-
 fun calcularSubtotal(items: List<ItemPedido>): Double {
     return items.sumOf { it.subtotal }
 }
 
+fun correspondeDescuento(cantidadPizzas: Int): Boolean {
+    return cantidadPizzas > UMBRAL_DESCUENTO_PIZZAS
+}
+
+fun calcularPorcentajeDescuento(cantidadPizzas: Int): Double {
+    return if (correspondeDescuento(cantidadPizzas)) TASA_DESCUENTO else 0.0
+}
+
 fun calcularDescuento(subtotal: Double, cantidadPizzas: Int): Double {
-    return if (cantidadPizzas > 3) subtotal * 0.10 else 0.0
+    return subtotal * calcularPorcentajeDescuento(cantidadPizzas)
 }
 
 fun calcularImpuesto(base: Double, tasa: Double = TASA_IMPUESTO): Double {

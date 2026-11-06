@@ -2,21 +2,21 @@ package modelo
 
 import utils.calcularDescuento as calcularDescuentoUtil
 import utils.calcularImpuesto as calcularImpuestoUtil
+import utils.calcularPorcentajeDescuento
 import utils.calcularSubtotal as calcularSubtotalUtil
 import utils.calcularTotal as calcularTotalUtil
 import utils.formatearMonto
+import utils.formatearPorcentaje
 
 class Pedido(
     val id: Int,
     val cliente: Cliente,
+    // items es la fuente única de productos y cantidades del pedido.
     val items: MutableList<ItemPedido>,
     val notas: String? = null,
     var estado: EstadoPedido = EstadoPedido.EN_PREPARACION,
     var repartidor: Repartidor? = null
 ) {
-    val productos: List<Producto>
-        get() = items.map { it.producto }
-
     val cantidadPizzas: Int
         get() = items.sumOf { it.cantidad }
 
@@ -32,8 +32,21 @@ class Pedido(
 
     fun calcularTotal(): Double = calcularTotalUtil(calcularSubtotal(), calcularDescuento(), calcularImpuesto())
 
-    fun cambiarEstado(nuevoEstado: EstadoPedido) {
+    fun cambiarEstado(nuevoEstado: EstadoPedido): Boolean {
+        if (!esTransicionPermitida(nuevoEstado)) {
+            return false
+        }
+
         estado = nuevoEstado
+        return true
+    }
+
+    private fun esTransicionPermitida(nuevoEstado: EstadoPedido): Boolean {
+        return when (estado) {
+            EstadoPedido.EN_PREPARACION -> nuevoEstado == EstadoPedido.LISTO
+            EstadoPedido.LISTO -> nuevoEstado == EstadoPedido.EN_CAMINO && repartidor != null
+            EstadoPedido.EN_CAMINO -> false
+        }
     }
 
     fun asignarRepartidor(nuevoRepartidor: Repartidor) {
@@ -51,7 +64,7 @@ class Pedido(
         val descuento: Double = calcularDescuento()
         val impuesto: Double = calcularImpuesto()
         val total: Double = calcularTotal()
-        val porcentajeDescuento: String = if (cantidadPizzas > 3) "10%" else "0%"
+        val porcentajeDescuento: String = formatearPorcentaje(calcularPorcentajeDescuento(cantidadPizzas))
 
         appendLine("============================================================")
         appendLine("                 RESUMEN DEL PEDIDO #$id")

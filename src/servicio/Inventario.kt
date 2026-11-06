@@ -24,17 +24,27 @@ class Inventario(disponibilidadInicial: Map<String, Int>) {
     }
 
     fun ingredientesFaltantes(items: List<ItemPedido>): Map<String, Int> {
-        return calcularRequerimientos(items)
-            .filter { (ingrediente, requerido) -> consultar(ingrediente) < requerido }
-            .mapValues { (ingrediente, requerido) -> requerido - consultar(ingrediente) }
+        return obtenerFaltantes(calcularRequerimientos(items))
     }
 
     fun actualizarInventario(items: List<ItemPedido>) {
         val requerimientos: Map<String, Int> = calcularRequerimientos(items)
+        val faltantes: Map<String, Int> = obtenerFaltantes(requerimientos)
+
+        require(faltantes.isEmpty()) {
+            "No se puede actualizar el inventario. Faltan: " +
+                faltantes.entries.joinToString { "${it.key} (${it.value})" }
+        }
 
         for ((ingrediente, cantidad) in requerimientos) {
             disponibilidad[ingrediente] = consultar(ingrediente) - cantidad
         }
+    }
+
+    private fun obtenerFaltantes(requerimientos: Map<String, Int>): Map<String, Int> {
+        return requerimientos
+            .filter { (ingrediente, requerido) -> consultar(ingrediente) < requerido }
+            .mapValues { (ingrediente, requerido) -> requerido - consultar(ingrediente) }
     }
 
     fun reponer(ingrediente: String, cantidad: Int) {
