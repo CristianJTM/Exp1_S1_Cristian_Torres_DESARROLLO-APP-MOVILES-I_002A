@@ -1,5 +1,7 @@
 package modelo
 
+import utils.CORREO_POR_DEFECTO
+
 class Cliente(
     nombre: String,
     contacto: String,
@@ -8,7 +10,7 @@ class Cliente(
 ) : Usuario(nombre, contacto) {
 
     val correoMostrado: String
-        get() = correo ?: "correo@invalido.com"
+        get() = correo ?: CORREO_POR_DEFECTO
 
     override fun describir(): String {
         return "Cliente: $nombre - Teléfono: $contacto - Correo: $correoMostrado - Zona: $zona"

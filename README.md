@@ -33,6 +33,7 @@ src/
 │   ├── Inventario.kt
 │   └── Pizzeria.kt
 └── utils/
+    ├── Constantes.kt
     ├── Validaciones.kt
     ├── Calculos.kt
     └── Formato.kt
@@ -56,6 +57,34 @@ src/
 - Si el teléfono es inválido, se usa `(000) 000-0000`.
 - Si el correo es inválido, se muestra `correo@invalido.com` y no se envía notificación.
 - Si no se ingresan notas, se muestra `Sin notas`.
+- La secuencia de estados es `En preparación → Listo → En camino`; no se permiten retrocesos.
+- Un pedido solo puede pasar a `En camino` cuando se le asigna un repartidor.
+- El repartidor se elige por zona y disponibilidad, priorizando la menor distancia.
+
+## Responsabilidades
+
+| Capa | Responsabilidad |
+|---|---|
+| `modelo` | Entidades y reglas propias del pedido, usuario y producto. |
+| `servicio` | Inventario, registro de pedidos, repartidores y reportes. |
+| `utils` | Constantes, validaciones, cálculos y formato de presentación. |
+| `Main` | Interacción por consola y coordinación del flujo. |
+
+## Escenarios de prueba
+
+| Escenario | Condición | Resultado esperado |
+|---|---|---|
+| Stock suficiente | Pedido dentro del inventario | Pedido registrado y stock descontado. |
+| Stock insuficiente | Pedido mayor al stock | Rechazo, lista de faltantes y pasos de reposición. |
+| Teléfono inválido | Texto no válido | Se usa `(000) 000-0000`. |
+| Correo inválido | Formato incorrecto | Se muestra `correo@invalido.com` y no se notifica. |
+| Notas vacías | Sin comentarios | Se muestra `Sin notas`. |
+| Cantidad inválida | `abc`, `0` o negativa | Se vuelve a solicitar la cantidad. |
+| Opción fuera de rango | Número fuera del menú | Se vuelve a solicitar la opción. |
+| Transición válida | `En preparación → Listo → En camino` | Se aplica solo con repartidor asignado. |
+| Transición inválida | Retroceso desde `En camino` | Se rechaza y se conserva el estado. |
+| Repartidor no disponible | Sin repartidor en la zona | El pedido queda en `Listo` sin asignación. |
+| Polimorfismo | Cliente y repartidor en `List<Usuario>` | `describir()` muestra el comportamiento específico. |
 
 ## Requisitos
 

@@ -6,6 +6,7 @@ import modelo.ItemPedido
 import modelo.Pedido
 import modelo.Producto
 import modelo.Repartidor
+import utils.detallarProducto
 import utils.formatearMonto
 
 class Pizzeria(
@@ -30,54 +31,73 @@ class Pizzeria(
             return null
         }
 
-        val faltantes: Map<String, Int> = inventario.ingredientesFaltantes(items)
+        val faltantes: Map<String, Int> = verificarDisponibilidad(items)
 
         return when {
             faltantes.isNotEmpty() -> {
-                println()
-                println("No hay ingredientes suficientes para preparar el pedido:")
-                for ((ingrediente, cantidad) in faltantes) {
-                    println("- $ingrediente: faltan $cantidad unidades.")
-                }
-                println("Pasos para reabastecer:")
-                println("1. Revisar el ingrediente faltante.")
-                println("2. Registrar la compra o entrada al inventario.")
-                println("3. Reponerlo desde la opción de inventario.")
-                println("4. Verificar nuevamente la disponibilidad.")
+                informarFaltantes(faltantes)
                 null
             }
             else -> {
                 inventario.actualizarInventario(items)
-                val pedido: Pedido = Pedido(
-                    id = siguienteId,
-                    cliente = cliente,
-                    items = items.toMutableList(),
-                    notas = notas
-                )
-                siguienteId += 1
-                pedidos.add(pedido)
-                println("Pedido #${pedido.id} registrado. Inventario actualizado.")
-                pedido
+                crearYRegistrarPedido(cliente, items, notas)
             }
         }
     }
 
-    fun asignarRepartidor(pedido: Pedido): Repartidor? {
-        if (pedido.estado == EstadoPedido.EN_CAMINO) {
-            println("El pedido #${pedido.id} ya está en camino.")
-            return null
+    private fun verificarDisponibilidad(items: List<ItemPedido>): Map<String, Int> {
+        return inventario.ingredientesFaltantes(items)
+    }
+
+    private fun informarFaltantes(faltantes: Map<String, Int>) {
+        println()
+        println("No hay ingredientes suficientes para preparar el pedido:")
+        for ((ingrediente, cantidad) in faltantes) {
+            println("- $ingrediente: faltan $cantidad unidades.")
         }
+        println("Pasos para reabastecer:")
+        println("1. Revisar el ingrediente faltante.")
+        println("2. Registrar la compra o entrada al inventario.")
+        println("3. Reponerlo desde la opción de inventario.")
+        println("4. Verificar nuevamente la disponibilidad.")
+    }
 
-        val repartidor: Repartidor? = repartidores
-            .sortedBy { it.distanciaKm }
-            .find { it.zona == pedido.cliente.zona && it.disponible }
+    private fun crearYRegistrarPedido(cliente: Cliente, items: List<ItemPedido>, notas: String?): Pedido {
+        val pedido: Pedido = Pedido(
+            id = siguienteId,
+            cliente = cliente,
+            items = items.toMutableList(),
+            notas = notas
+        )
+        siguienteId += 1
+        pedidos.add(pedido)
+        println("Pedido #${pedido.id} registrado. Inventario actualizado.")
+        return pedido
+    }
 
-        repartidor?.let {
-            it.entregarPedido(pedido)
-            println("Repartidor asignado: ${it.describir()}")
-        } ?: println("No hay repartidores disponibles en la zona ${pedido.cliente.zona}.")
+    fun asignarRepartidor(pedido: Pedido): Repartidor? {
+        return when (pedido.estado) {
+            EstadoPedido.EN_CAMINO -> {
+                println("El pedido #${pedido.id} ya está en camino.")
+                null
+            }
+            EstadoPedido.EN_PREPARACION -> {
+                println("El pedido #${pedido.id} debe estar Listo antes de asignar un repartidor.")
+                null
+            }
+            EstadoPedido.LISTO -> {
+                val repartidor: Repartidor? = repartidores
+                    .filter { it.zona == pedido.cliente.zona && it.disponible }
+                    .minByOrNull { it.distanciaKm }
 
-        return repartidor
+                repartidor?.let {
+                    it.entregarPedido(pedido)
+                    println("Repartidor asignado: ${it.describir()}")
+                } ?: println("No hay repartidores disponibles en la zona ${pedido.cliente.zona}.")
+
+                repartidor
+            }
+        }
     }
 
     fun listarPedidos(): List<Pedido> = pedidos.toList()
